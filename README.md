@@ -377,10 +377,6 @@ Docker/README/verification (0.5h), then a design pass after receiving the Ledger
 direction: tokens, typography, responsive register, English data and a full
 click-through (1.5h).
 
-**AI assistance:** this implementation was produced with AI assistance in a
-single session, per the recruiter's confirmation that tooling is allowed. Every
-decision above is documented so it can be defended and changed in review.
-
 ---
 
 ## Git history

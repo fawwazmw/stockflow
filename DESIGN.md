@@ -16,7 +16,7 @@ ink on warm paper, figures that line up, stamps for status. Quiet, precise,
 accountable. It is a tool you use forty times a day, not a landing page.
 
 - **Personality:** exact, calm, unsentimental.
-- **Never:** playful, promotional, "AI-native", dashboard-glow.
+- **Never:** playful, promotional, dashboard-glow.
 - **Test:** a supervisor should trust the number they are looking at without
   wondering whether the interface is decorating it.
 
