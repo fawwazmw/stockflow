@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { ApiError, deleteProduct, getDailySales, getSummary, listProducts } from '../api/client'
 import type { Product, ProductStatusFilter } from '../api/types'
 import { ProductStatusBadge, StockCell } from '../components/Badges'
@@ -64,11 +63,27 @@ export function ProductsPage() {
     daily.refetch()
   }
 
+  const openAdd = () => {
+    setFormProduct(null)
+    setFormOpen(true)
+  }
+
+  const openEdit = (product: Product) => {
+    setFormProduct(product)
+    setFormOpen(true)
+  }
+
   const handleSaved = (message: string) => {
     setFormOpen(false)
     setAdjustTarget(null)
     setToast(message)
     refresh()
+  }
+
+  const requestDelete = (product: Product) => {
+    setFormOpen(false)
+    setDeleteError(null)
+    setDeleteTarget(product)
   }
 
   const handleDelete = async () => {
@@ -83,10 +98,10 @@ export function ProductsPage() {
     } catch (error) {
       if (error instanceof ApiError && error.isProductHasHistory) {
         setDeleteError(
-          'This product has stock movement or order history, so it cannot be deleted. Deactivate it instead to keep the history intact.',
+          'This product has stock movements or order history, so it cannot be deleted. Deactivate it instead to keep the records intact.',
         )
       } else {
-        setDeleteError(error instanceof ApiError ? error.message : 'Could not delete the product')
+        setDeleteError(error instanceof ApiError ? error.message : 'The product could not be deleted.')
       }
     } finally {
       setDeleting(false)
@@ -103,22 +118,12 @@ export function ProductsPage() {
         <div>
           <h1>Products</h1>
           <p className="page-subtitle">
-            Warehouse inventory, stock movements and sales in one place.
+            Every item in the warehouse, with its stock on hand, price and last movement.
           </p>
         </div>
         <div className="page-actions">
-          <Link className="button button-ghost" to="/orders">
-            Orders
-          </Link>
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={() => {
-              setFormProduct(null)
-              setFormOpen(true)
-            }}
-          >
-            New product
+          <button type="button" className="button button-primary" onClick={openAdd}>
+            Add product
           </button>
         </div>
       </div>
@@ -130,7 +135,7 @@ export function ProductsPage() {
           <div className="search-box">
             <input
               className="input search-input"
-              placeholder="Search SKU or name…"
+              placeholder="Search SKU or product name"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
               aria-label="Search products"
@@ -171,7 +176,7 @@ export function ProductsPage() {
         ) : (
           <>
             {products.error ? (
-              <Alert tone="warning" title="Showing cached data">
+              <Alert tone="warning" title="Showing the last loaded data">
                 {products.error.message}
               </Alert>
             ) : null}
@@ -194,19 +199,25 @@ export function ProductsPage() {
 
                   {rows.map((product) => (
                     <tr key={product.id}>
-                      <td>
+                      <td className="cell-sku" data-label="SKU">
                         <code className="sku">{product.sku}</code>
                       </td>
-                      <td className="product-name">{product.name}</td>
-                      <td className="align-right tabular">{formatIDR(product.price)}</td>
-                      <td className="align-right">
+                      <td className="cell-name product-name" data-label="Name">
+                        {product.name}
+                      </td>
+                      <td className="num" data-label="Price">
+                        {formatIDR(product.price)}
+                      </td>
+                      <td className="align-right" data-label="Stock">
                         <StockCell stock={product.stock} />
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <ProductStatusBadge active={product.is_active} />
                       </td>
-                      <td className="muted">{relativeTime(product.last_movement_at)}</td>
-                      <td>
+                      <td className="muted" data-label="Last movement">
+                        {relativeTime(product.last_movement_at)}
+                      </td>
+                      <td className="cell-actions" data-label="Actions">
                         <div className="row-actions">
                           <button
                             type="button"
@@ -225,22 +236,9 @@ export function ProductsPage() {
                           <button
                             type="button"
                             className="button button-sm button-ghost"
-                            onClick={() => {
-                              setFormProduct(product)
-                              setFormOpen(true)
-                            }}
+                            onClick={() => openEdit(product)}
                           >
                             Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="button button-sm button-ghost button-danger-text"
-                            onClick={() => {
-                              setDeleteError(null)
-                              setDeleteTarget(product)
-                            }}
-                          >
-                            Delete
                           </button>
                         </div>
                       </td>
@@ -249,13 +247,14 @@ export function ProductsPage() {
 
                   {!showSkeleton && rows.length === 0 ? (
                     <tr>
-                      <td colSpan={7}>
+                      <td colSpan={7} className="cell-empty">
                         <EmptyState
+                          kicker={filtersActive ? 'Filtered' : 'Catalogue'}
                           title={filtersActive ? 'No products match' : 'No products yet'}
                           message={
                             filtersActive
-                              ? 'Try a different search term or filter.'
-                              : 'Create your first product to start tracking stock.'
+                              ? 'Try another search term, or clear the filters to see every item.'
+                              : 'Add the first product to start keeping a stock ledger.'
                           }
                           action={
                             filtersActive ? (
@@ -270,15 +269,8 @@ export function ProductsPage() {
                                 Clear filters
                               </button>
                             ) : (
-                              <button
-                                type="button"
-                                className="button button-primary"
-                                onClick={() => {
-                                  setFormProduct(null)
-                                  setFormOpen(true)
-                                }}
-                              >
-                                New product
+                              <button type="button" className="button button-primary" onClick={openAdd}>
+                                Add product
                               </button>
                             )
                           }
@@ -307,8 +299,9 @@ export function ProductsPage() {
         product={formProduct}
         onClose={() => setFormOpen(false)}
         onSaved={(product) =>
-          handleSaved(`${product.sku} ${formProduct ? 'updated' : 'created'}`)
+          handleSaved(`${product.sku} ${formProduct ? 'updated' : 'added'}`)
         }
+        onRequestDelete={requestDelete}
       />
 
       <StockAdjustModal
@@ -325,17 +318,17 @@ export function ProductsPage() {
         message={
           <>
             <p>
-              This removes <strong>{deleteTarget?.name}</strong> from the catalogue. This cannot be
+              This removes <strong>{deleteTarget?.name}</strong> from the catalogue. It cannot be
               undone.
             </p>
             <p className="muted">
-              Products with stock movement or order history can never be deleted — use Edit to
-              deactivate them instead.
+              Products with stock movements or order history can never be deleted. Deactivate them
+              instead.
             </p>
           </>
         }
         confirmLabel="Delete product"
-        busyLabel="Deleting…"
+        busyLabel="Deleting"
         busy={deleting}
         danger
         error={deleteError}

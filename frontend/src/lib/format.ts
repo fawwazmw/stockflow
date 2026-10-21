@@ -1,4 +1,4 @@
-/** Pure formatting helpers — unit tested in format.test.ts. */
+/** Pure formatting helpers, unit tested in format.test.ts. */
 
 const idr = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 })
 
@@ -13,21 +13,26 @@ export function formatNumber(value: number): string {
   return idr.format(value)
 }
 
+/** "1 order", "2 orders": counts next to a noun always agree. */
+export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
+  return `${formatNumber(count)} ${count === 1 ? singular : pluralForm}`
+}
+
 const monthShort = new Intl.DateTimeFormat('en-US', { month: 'short' })
 
 const pad2 = (value: number): string => String(value).padStart(2, '0')
 
-/** "12 Sep 2026" — built explicitly so every month is three letters. */
+/** "12 Sep 2026", built explicitly so every month is three letters. */
 export function formatDate(iso: string): string {
   const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return '-'
   return `${pad2(date.getDate())} ${monthShort.format(date)} ${date.getFullYear()}`
 }
 
 /** "12 Sep 2026, 15:04" in the viewer's timezone. */
 export function formatDateTime(iso: string): string {
   const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return '—'
+  if (Number.isNaN(date.getTime())) return '-'
   return `${formatDate(iso)}, ${pad2(date.getHours())}:${pad2(date.getMinutes())}`
 }
 
@@ -37,11 +42,12 @@ const DAY = 24 * HOUR
 
 /**
  * "2h ago" style relative time. `now` is injectable so the tests are stable.
+ * A product that has never moved says so in words, not in a dash.
  */
 export function relativeTime(iso: string | null, now: number = Date.now()): string {
-  if (!iso) return '—'
+  if (!iso) return 'Never'
   const then = new Date(iso).getTime()
-  if (Number.isNaN(then)) return '—'
+  if (Number.isNaN(then)) return 'Never'
 
   const diff = now - then
   if (diff < 0) return 'just now'

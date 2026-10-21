@@ -23,7 +23,11 @@ export function OrderDetailPage() {
   if (!Number.isInteger(orderId) || orderId <= 0) {
     return (
       <div className="page page-narrow">
-        <ErrorState message="Invalid order id" onRetry={() => setRefreshKey((k) => k + 1)} />
+        <ErrorState
+          title="That order id is not valid"
+          message="Order addresses look like /orders/12."
+          onRetry={() => setRefreshKey((key) => key + 1)}
+        />
       </div>
     )
   }
@@ -40,7 +44,7 @@ export function OrderDetailPage() {
       if (error instanceof ApiError && error.code === 'ORDER_ALREADY_CANCELLED') {
         setCancelError('This order is already cancelled.')
       } else {
-        setCancelError(error instanceof ApiError ? error.message : 'Could not cancel the order')
+        setCancelError(error instanceof ApiError ? error.message : 'The order could not be cancelled.')
       }
     } finally {
       setCancelling(false)
@@ -55,9 +59,11 @@ export function OrderDetailPage() {
             <h1>Order</h1>
             <p className="page-subtitle">Order detail</p>
           </div>
-          <Link className="button button-ghost" to="/orders">
-            All orders
-          </Link>
+          <div className="page-actions">
+            <Link className="button button-ghost" to="/orders">
+              All orders
+            </Link>
+          </div>
         </div>
         <ErrorState message={order.error.message} onRetry={order.refetch} />
       </div>
@@ -87,7 +93,7 @@ export function OrderDetailPage() {
         <div>
           <h1>Order #{data.id}</h1>
           <p className="page-subtitle">
-            {data.customer} · created {formatDateTime(data.created_at)}
+            {data.customer}, created {formatDateTime(data.created_at)}
           </p>
         </div>
         <div className="page-actions">
@@ -102,25 +108,28 @@ export function OrderDetailPage() {
 
       {justCancelled ? (
         <Alert tone="success" title="Order cancelled">
-          Stock has been restored for every item. Open the products page to see the updated quantities.
+          Stock has been returned for every item. The products page now shows the restored
+          quantities.
         </Alert>
       ) : null}
 
       <section className="card">
         <div className="detail-meta">
           <div>
-            <span className="metric-label">Status</span>
+            <span className="ledger-label">Status</span>
             <div>
               <OrderStatusBadge status={data.status} />
             </div>
           </div>
           <div>
-            <span className="metric-label">Total</span>
-            <div className="detail-total tabular">{formatIDR(data.total)}</div>
+            <span className="ledger-label">Total</span>
+            <div className="detail-total">{formatIDR(data.total)}</div>
           </div>
           <div>
-            <span className="metric-label">Cancelled at</span>
-            <div>{data.cancelled_at ? formatDateTime(data.cancelled_at) : '—'}</div>
+            <span className="ledger-label">Cancelled</span>
+            <div className="muted">
+              {data.cancelled_at ? formatDateTime(data.cancelled_at) : 'Not cancelled'}
+            </div>
           </div>
         </div>
 
@@ -138,13 +147,21 @@ export function OrderDetailPage() {
             <tbody>
               {data.items.map((item) => (
                 <tr key={item.id}>
-                  <td>
+                  <td className="cell-sku" data-label="SKU">
                     <code className="sku">{item.sku}</code>
                   </td>
-                  <td>{item.product_name}</td>
-                  <td className="align-right">{item.qty}</td>
-                  <td className="align-right tabular">{formatIDR(item.unit_price)}</td>
-                  <td className="align-right tabular">{formatIDR(item.subtotal)}</td>
+                  <td className="cell-name" data-label="Product">
+                    {item.product_name}
+                  </td>
+                  <td className="num" data-label="Qty">
+                    {item.qty}
+                  </td>
+                  <td className="num" data-label="Unit price">
+                    {formatIDR(item.unit_price)}
+                  </td>
+                  <td className="num" data-label="Subtotal">
+                    {formatIDR(item.subtotal)}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -153,7 +170,7 @@ export function OrderDetailPage() {
                 <td colSpan={4} className="align-right">
                   Total
                 </td>
-                <td className="align-right tabular total-cell">{formatIDR(data.total)}</td>
+                <td className="num total-cell">{formatIDR(data.total)}</td>
               </tr>
             </tfoot>
           </table>
@@ -161,7 +178,7 @@ export function OrderDetailPage() {
 
         <div className="form-actions">
           {isCancelled ? (
-            <p className="muted">This order was cancelled and its stock was restored.</p>
+            <p className="muted">This order was cancelled and its stock was returned.</p>
           ) : (
             <button
               type="button"
@@ -183,14 +200,14 @@ export function OrderDetailPage() {
         message={
           <>
             <p>
-              All {data.items.length} line item(s) will be returned to stock and the order will be
-              marked as cancelled.
+              All {data.items.length} line items return to stock, and the order is marked as
+              cancelled.
             </p>
-            <p className="muted">The order is kept for history — nothing is deleted.</p>
+            <p className="muted">The order is kept for history. Nothing is deleted.</p>
           </>
         }
         confirmLabel="Cancel order"
-        busyLabel="Cancelling…"
+        busyLabel="Cancelling"
         busy={cancelling}
         danger
         error={cancelError}

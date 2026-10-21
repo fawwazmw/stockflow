@@ -11,16 +11,23 @@ import { Alert } from './Feedback'
 import { Modal } from './Modal'
 
 interface ProductFormModalProps {
-  /** null = create mode */
+  /** null means "add" mode */
   product: Product | null
   open: boolean
   onClose: () => void
   onSaved: (product: Product) => void
+  onRequestDelete?: (product: Product) => void
 }
 
 const EMPTY: ProductFormValues = { sku: '', name: '', price: '', stock: '', isActive: true }
 
-export function ProductFormModal({ product, open, onClose, onSaved }: ProductFormModalProps) {
+export function ProductFormModal({
+  product,
+  open,
+  onClose,
+  onSaved,
+  onRequestDelete,
+}: ProductFormModalProps) {
   const isEdit = product !== null
   const [values, setValues] = useState<ProductFormValues>(EMPTY)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -70,9 +77,7 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
     }
 
     try {
-      const saved = isEdit
-        ? await updateProduct(product.id, payload)
-        : await createProduct(payload)
+      const saved = isEdit ? await updateProduct(product.id, payload) : await createProduct(payload)
       onSaved(saved)
     } catch (error) {
       if (error instanceof ApiError) {
@@ -81,10 +86,12 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
           setErrors((prev) => ({ ...prev, ...error.fields }))
         }
         if (error.code === 'SKU_ALREADY_EXISTS') {
-          setErrors((prev) => ({ ...prev, sku: `SKU ${payload.sku} is already in use` }))
+          setErrors((prev) => ({ ...prev, sku: `${payload.sku} is already used by another product` }))
         }
       } else {
-        setServerError(new ApiError(0, { code: 'UNKNOWN_ERROR', message: 'Could not save the product' }))
+        setServerError(
+          new ApiError(0, { code: 'UNKNOWN_ERROR', message: 'The product could not be saved.' }),
+        )
       }
     } finally {
       setSaving(false)
@@ -94,7 +101,7 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
   return (
     <Modal
       open={open}
-      title={isEdit ? `Edit product — ${product.sku}` : 'New product'}
+      title={isEdit ? `Edit ${product.sku}` : 'Add product'}
       onClose={saving ? () => undefined : onClose}
       footer={
         <>
@@ -102,7 +109,7 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
             Cancel
           </button>
           <button type="submit" form="product-form" className="button button-primary" disabled={saving}>
-            {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Create product'}
+            {saving ? 'Saving' : isEdit ? 'Save changes' : 'Add product'}
           </button>
         </>
       }
@@ -114,31 +121,31 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
             className={errors.sku ? 'input input-error' : 'input'}
             value={values.sku}
             onChange={(event) => setField('sku', event.target.value)}
-            placeholder="SKU-001"
+            placeholder="KEY-001"
             autoFocus
           />
           {errors.sku ? <span className="field-error">{errors.sku}</span> : null}
         </label>
 
         <label className="field">
-          <span className="field-label">Name</span>
+          <span className="field-label">Product name</span>
           <input
             className={errors.name ? 'input input-error' : 'input'}
             value={values.name}
             onChange={(event) => setField('name', event.target.value)}
-            placeholder="Product name"
+            placeholder="Keyboard Logitech K380"
           />
           {errors.name ? <span className="field-error">{errors.name}</span> : null}
         </label>
 
         <label className="field">
-          <span className="field-label">Price (IDR)</span>
+          <span className="field-label">Price in IDR</span>
           <input
             className={errors.price ? 'input input-error' : 'input'}
             inputMode="numeric"
             value={values.price}
             onChange={(event) => setField('price', event.target.value)}
-            placeholder="150000"
+            placeholder="499000"
           />
           {errors.price ? <span className="field-error">{errors.price}</span> : null}
         </label>
@@ -146,7 +153,7 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
         {isEdit ? null : (
           <label className="field">
             <span className="field-label">
-              Initial stock <span className="field-hint">(optional)</span>
+              Opening stock <span className="field-hint">optional</span>
             </span>
             <input
               className={errors.stock ? 'input input-error' : 'input'}
@@ -156,6 +163,7 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
               placeholder="0"
             />
             {errors.stock ? <span className="field-error">{errors.stock}</span> : null}
+            <span className="field-hint">Recorded as an opening movement in the ledger.</span>
           </label>
         )}
 
@@ -165,21 +173,40 @@ export function ProductFormModal({ product, open, onClose, onSaved }: ProductFor
             checked={values.isActive}
             onChange={(event) => setField('isActive', event.target.checked)}
           />
-          <span className="field-label">Active (can be sold)</span>
+          <span className="field-label">Active, available for sale</span>
         </label>
 
         {isEdit ? (
           <p className="field-hint">
-            Stock is only changed through stock movements, so the ledger stays complete.
+            Stock is changed through movements only, so every unit is accounted for.
           </p>
         ) : null}
 
         {serverError && Object.keys(serverError.fields).length === 0 ? (
-          <Alert tone="error" title="Could not save">
+          <Alert tone="error" title="Product rejected">
             {serverError.message}
           </Alert>
         ) : null}
       </form>
+
+      {isEdit && product && onRequestDelete ? (
+        <div className="danger-zone">
+          <div>
+            <span className="field-label">Delete this product</span>
+            <p className="field-hint">
+              Only products without stock or order history can be deleted.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="button button-sm button-danger-text"
+            onClick={() => onRequestDelete(product)}
+            disabled={saving}
+          >
+            Delete
+          </button>
+        </div>
+      ) : null}
     </Modal>
   )
 }

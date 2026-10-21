@@ -18,15 +18,17 @@ export function Alert({ tone = 'error', title, children }: AlertProps) {
 }
 
 interface EmptyStateProps {
+  kicker?: string
   title: string
   message: string
   action?: ReactNode
 }
 
-export function EmptyState({ title, message, action }: EmptyStateProps) {
+/** No icon: a ruled blank in a ledger is a label and a line, not a glyph. */
+export function EmptyState({ kicker = 'Empty', title, message, action }: EmptyStateProps) {
   return (
     <div className="state-block">
-      <div className="state-icon">□</div>
+      <span className="state-kicker">{kicker}</span>
       <h3>{title}</h3>
       <p>{message}</p>
       {action}
@@ -35,18 +37,19 @@ export function EmptyState({ title, message, action }: EmptyStateProps) {
 }
 
 interface ErrorStateProps {
+  title?: string
   message: string
   onRetry: () => void
 }
 
-export function ErrorState({ message, onRetry }: ErrorStateProps) {
+export function ErrorState({ title = 'Could not load this data', message, onRetry }: ErrorStateProps) {
   return (
     <div className="state-block state-error">
-      <div className="state-icon">!</div>
-      <h3>Could not load data</h3>
+      <span className="state-kicker">Connection error</span>
+      <h3>{title}</h3>
       <p>{message}</p>
       <button type="button" className="button" onClick={onRetry}>
-        Retry
+        Try again
       </button>
     </div>
   )

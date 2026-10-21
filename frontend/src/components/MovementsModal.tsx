@@ -20,7 +20,7 @@ export function MovementsModal({ product, onClose }: MovementsModalProps) {
   if (!product) return null
 
   return (
-    <Modal open title={`Stock history — ${product.sku}`} onClose={onClose} wide>
+    <Modal open title={`Stock history for ${product.sku}`} onClose={onClose} wide>
       <p className="modal-subtitle">{product.name}</p>
 
       {movements.error ? (
@@ -42,15 +42,17 @@ export function MovementsModal({ product, onClose }: MovementsModalProps) {
                 <tr key={movement.id}>
                   <td className="muted">{formatDateTime(movement.created_at)}</td>
                   <td>
-                    <span className={movement.type === 'in' ? 'badge badge-green' : 'badge badge-amber'}>
-                      {movement.type === 'in' ? 'Stock in' : 'Stock out'}
+                    <span
+                      className={movement.type === 'in' ? 'badge badge-green' : 'badge badge-amber'}
+                    >
+                      {movement.type === 'in' ? 'In' : 'Out'}
                     </span>
                   </td>
-                  <td className="align-right">
-                    {movement.type === 'in' ? '+' : '−'}
+                  <td className="num">
+                    {movement.type === 'in' ? '+' : '-'}
                     {movement.qty}
                   </td>
-                  <td className="muted">{movement.note ?? '—'}</td>
+                  <td className="muted">{movement.note ?? 'No note'}</td>
                 </tr>
               ))}
             </tbody>
@@ -58,8 +60,9 @@ export function MovementsModal({ product, onClose }: MovementsModalProps) {
 
           {movements.data && movements.data.length === 0 ? (
             <EmptyState
-              title="No movements yet"
-              message="Stock changes for this product will appear here."
+              kicker="Ledger"
+              title="No movements recorded"
+              message="Stock changes for this product will appear here, newest first."
             />
           ) : null}
         </div>

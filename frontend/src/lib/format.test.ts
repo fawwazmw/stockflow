@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDateTime, formatIDR, formatNumber, relativeTime, todayISO } from './format'
+import {
+  formatDate,
+  formatDateTime,
+  formatIDR,
+  formatNumber,
+  plural,
+  relativeTime,
+  todayISO,
+} from './format'
 
 const NOW = new Date('2026-10-21T12:00:00.000Z').getTime()
 const isoAgo = (ms: number) => new Date(NOW - ms).toISOString()
@@ -27,9 +35,18 @@ describe('formatNumber', () => {
   })
 })
 
+describe('plural', () => {
+  it('agrees with the count', () => {
+    expect(plural(1, 'order')).toBe('1 order')
+    expect(plural(2, 'order')).toBe('2 orders')
+    expect(plural(0, 'item')).toBe('0 items')
+    expect(plural(1_200, 'unit')).toBe('1.200 units')
+  })
+})
+
 describe('relativeTime', () => {
-  it('returns a dash for missing timestamps', () => {
-    expect(relativeTime(null, NOW)).toBe('—')
+  it('says "Never" when there is no timestamp', () => {
+    expect(relativeTime(null, NOW)).toBe('Never')
   })
 
   it('treats the last minute as "just now"', () => {
@@ -60,8 +77,8 @@ describe('date helpers', () => {
   })
 
   it('renders a dash for invalid input', () => {
-    expect(formatDate('not-a-date')).toBe('—')
-    expect(formatDateTime('')).toBe('—')
+    expect(formatDate('not-a-date')).toBe('-')
+    expect(formatDateTime('')).toBe('-')
   })
 
   it('produces a YYYY-MM-DD local date', () => {

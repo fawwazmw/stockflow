@@ -18,14 +18,13 @@ export function OrdersPage() {
       <div className="page-header">
         <div>
           <h1>Orders</h1>
-          <p className="page-subtitle">Every sale, its status and the stock it consumed.</p>
+          <p className="page-subtitle">
+            Every sale, the stock it reserved, and whether it was cancelled.
+          </p>
         </div>
         <div className="page-actions">
-          <Link className="button button-ghost" to="/">
-            Products
-          </Link>
           <Link className="button button-primary" to="/orders/new">
-            New order
+            Create order
           </Link>
         </div>
       </div>
@@ -44,7 +43,7 @@ export function OrdersPage() {
                   <th className="align-right">Items</th>
                   <th className="align-right">Total</th>
                   <th>Status</th>
-                  <th />
+                  <th className="align-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -52,35 +51,46 @@ export function OrdersPage() {
 
                 {orders.data?.data.map((order) => (
                   <tr key={order.id}>
-                    <td>
-                      <Link className="link" to={`/orders/${order.id}`}>
+                    <td className="cell-id" data-label="Order">
+                      <Link className="link tabular" to={`/orders/${order.id}`}>
                         #{order.id}
                       </Link>
                     </td>
-                    <td>{order.customer}</td>
-                    <td className="muted">{formatDateTime(order.created_at)}</td>
-                    <td className="align-right">{order.items.length}</td>
-                    <td className="align-right tabular">{formatIDR(order.total)}</td>
-                    <td>
+                    <td className="cell-customer" data-label="Customer">
+                      {order.customer}
+                    </td>
+                    <td className="muted" data-label="Created">
+                      {formatDateTime(order.created_at)}
+                    </td>
+                    <td className="num" data-label="Items">
+                      {order.items.length}
+                    </td>
+                    <td className="num" data-label="Total">
+                      {formatIDR(order.total)}
+                    </td>
+                    <td data-label="Status">
                       <OrderStatusBadge status={order.status} />
                     </td>
-                    <td className="align-right">
-                      <Link className="button button-sm button-ghost" to={`/orders/${order.id}`}>
-                        View
-                      </Link>
+                    <td className="cell-actions" data-label="Actions">
+                      <div className="row-actions">
+                        <Link className="button button-sm button-ghost" to={`/orders/${order.id}`}>
+                          View
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
 
                 {orders.data && orders.data.data.length === 0 ? (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={7} className="cell-empty">
                       <EmptyState
+                        kicker="Sales"
                         title="No orders yet"
-                        message="Create an order to reserve stock and see the server-computed total."
+                        message="Create an order to reserve stock and see the total the server calculates."
                         action={
                           <Link className="button button-primary" to="/orders/new">
-                            New order
+                            Create order
                           </Link>
                         }
                       />

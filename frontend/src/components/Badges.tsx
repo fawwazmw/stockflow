@@ -1,5 +1,9 @@
 import type { OrderStatus } from '../api/types'
 
+/**
+ * Statuses are squared stamps, not pills: a rubber stamp in a stock register.
+ * Every stamp carries a word, so colour is never the only signal.
+ */
 export function ProductStatusBadge({ active }: { active: boolean }) {
   return (
     <span className={active ? 'badge badge-green' : 'badge badge-gray'}>
@@ -9,23 +13,18 @@ export function ProductStatusBadge({ active }: { active: boolean }) {
 }
 
 export function StockCell({ stock }: { stock: number }) {
-  if (stock === 0) {
-    return (
-      <span className="stock-cell">
-        <strong>0</strong>
-        <span className="badge badge-red">out</span>
-      </span>
-    )
-  }
-  if (stock <= 10) {
-    return (
-      <span className="stock-cell">
-        <strong>{stock}</strong>
-        <span className="badge badge-amber">low</span>
-      </span>
-    )
-  }
-  return <span className="stock-cell">{stock}</span>
+  const tone = stock === 0 ? 'stock-number-out' : stock <= 10 ? 'stock-number-low' : undefined
+
+  return (
+    <span className="stock-cell">
+      <span className={tone}>{stock}</span>
+      {stock === 0 ? (
+        <span className="badge badge-red">Out</span>
+      ) : stock <= 10 ? (
+        <span className="badge badge-amber">Low</span>
+      ) : null}
+    </span>
+  )
 }
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {

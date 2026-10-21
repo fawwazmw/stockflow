@@ -9,15 +9,12 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div className="app-header-inner">
-          <NavLink to="/" className="brand">
-            <span className="brand-mark">SF</span>
-            <span>
-              <strong>StockFlow</strong>
-              <span className="brand-sub">Inventory &amp; Sales</span>
-            </span>
+          <NavLink to="/" className="brand" aria-label="StockFlow, go to products">
+            <span className="brand-name">StockFlow</span>
+            <span className="brand-sub">Inventory and sales</span>
           </NavLink>
 
-          <nav className="nav">
+          <nav className="nav" aria-label="Main">
             <NavLink
               to="/"
               end
@@ -46,7 +43,10 @@ export default function App() {
       </main>
 
       <footer className="app-footer">
-        StockFlow — mini ERP demo · Go + PostgreSQL + React
+        <div className="app-footer-inner">
+          <span>StockFlow, a stock ledger for small warehouses</span>
+          <span>Go API, PostgreSQL, React</span>
+        </div>
       </footer>
     </div>
   )
@@ -57,11 +57,11 @@ function NotFound() {
     <div className="page page-narrow">
       <section className="card">
         <div className="state-block">
-          <div className="state-icon">?</div>
-          <h3>Page not found</h3>
-          <p>The page you are looking for does not exist.</p>
-          <NavLink className="button button-primary" to="/">
-            Back to products
+          <span className="state-kicker">404</span>
+          <h3>This page does not exist</h3>
+          <p>The address you followed is not part of StockFlow.</p>
+          <NavLink className="button" to="/">
+            Go to products
           </NavLink>
         </div>
       </section>
