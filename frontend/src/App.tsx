@@ -1,10 +1,13 @@
-import { NavLink, Route, Routes } from 'react-router-dom'
+import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { CreateOrderPage } from './pages/CreateOrderPage'
 import { OrderDetailPage } from './pages/OrderDetailPage'
 import { OrdersPage } from './pages/OrdersPage'
 import { ProductsPage } from './pages/ProductsPage'
 
 export default function App() {
+  const location = useLocation()
+
   return (
     <div className="app">
       <header className="app-header">
@@ -33,13 +36,15 @@ export default function App() {
       </header>
 
       <main className="app-main">
-        <Routes>
-          <Route path="/" element={<ProductsPage />} />
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/orders/new" element={<CreateOrderPage />} />
-          <Route path="/orders/:id" element={<OrderDetailPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <ErrorBoundary key={location.pathname}>
+          <Routes>
+            <Route path="/" element={<ProductsPage />} />
+            <Route path="/orders" element={<OrdersPage />} />
+            <Route path="/orders/new" element={<CreateOrderPage />} />
+            <Route path="/orders/:id" element={<OrderDetailPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
 
       <footer className="app-footer">
