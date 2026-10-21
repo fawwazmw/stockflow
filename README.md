@@ -1,12 +1,25 @@
-# StockFlow — Inventory & Sales (mini ERP)
+# StockFlow: Inventory and Sales (mini ERP)
 
 A warehouse supervisor's tool: manage products, adjust stock with an auditable
 ledger, and record sales orders that reserve stock atomically. The React
-frontend talks to the real Go API — there is no mock data anywhere in the
+frontend talks to the real Go API. There is no mock data anywhere in the
 deliverable.
 
 **Stack:** React 19 + TypeScript (Vite) · Go 1.24 (`net/http` + `pgx/v5`) ·
 PostgreSQL 16 · Docker Compose.
+
+## Interface direction
+
+The UI follows `DESIGN.md`: a stock-ledger language. Warm paper, ink text, a
+single petrol accent, IBM Plex Sans with IBM Plex Mono for every SKU and figure,
+square status stamps, and rules instead of shadows. Dials are
+**ENERGY 2 / RHYTHM 1 / MOTION 1**.
+
+All interface copy and seed data are in English. Money stays integer IDR and is
+rendered as `Rp 1.234.567`, which is the format the brief specifies.
+
+The register becomes a stack of labelled entries on phones rather than a
+sideways-scrolling table, and every control meets a 44px tap target there.
 
 ---
 
@@ -51,12 +64,12 @@ Postgres from compose, then the two apps on the host:
 ```bash
 docker compose up -d db
 
-# terminal 1 — API
+# terminal 1: API
 cd backend
 DATABASE_URL="postgres://stockflow:stockflow@localhost:5432/stockflow?sslmode=disable" \
   go run ./cmd/api          # listens on :8080
 
-# terminal 2 — Vite
+# terminal 2: Vite
 cd frontend
 npm install
 npm run dev                 # http://localhost:5173, proxies /api to :8080
@@ -79,7 +92,7 @@ make test-frontend
 ```
 
 Backend tests create a **throw-away Postgres schema per test**, apply the real
-`0001_schema.sql`, and drop the schema afterwards — they never read or write the
+`0001_schema.sql`, and drop the schema afterwards. They never read or write the
 seeded data. They need `TEST_DATABASE_URL` (the Makefile supplies it).
 
 Covered:
@@ -96,7 +109,7 @@ Covered:
 | `TestIdempotencyKeyReplaysTheSameOrder` | retry returns the same order; a different payload with the same key conflicts |
 | `TestListProductsSearchFilterAndLastMovement` | case-insensitive search, filters, pagination, literal `%`, null `last_movement_at` |
 
-Frontend (Vitest, pure logic — no DOM needed): currency/relative-time
+Frontend (Vitest, pure logic, no DOM needed): currency/relative-time
 formatting, quantity and form validation, and the order-line validator
 (duplicate SKUs, zero/negative/fractional quantities).
 
@@ -108,7 +121,7 @@ Base URL `http://localhost:8080`.
 
 ### Error envelope
 
-Every failure — validation, conflict, 404, 500 — uses one shape:
+Every failure (validation, conflict, 404, 500) uses one shape:
 
 ```json
 { "error": { "code": "INSUFFICIENT_STOCK", "message": "…", "sku": "CHR-001", "available": 3, "requested": 99 } }
@@ -137,16 +150,16 @@ a specific order line:
 | GET | `/api/products?search=&page=&limit=&status=` | 200 `{data,page,limit,total}` | `search` matches sku or name, case-insensitive. `status` = `all\|active\|inactive\|low` (**extension**). `last_movement_at` is derived per row. |
 | POST | `/api/products` | 201 `{data}` | `sku` required + unique, `name` required, `price` integer ≥ 0. Optional `stock` writes an opening `in` movement. |
 | GET | `/api/products/{id}` | 200 `{data}` | **extension** |
-| PUT | `/api/products/{id}` | 200 `{data}` | Full replace of sku/name/price/is_active. **Stock is not settable here** — use the stock endpoint. 404 if missing, 409 on duplicate SKU. |
+| PUT | `/api/products/{id}` | 200 `{data}` | Full replace of sku/name/price/is_active. **Stock is not settable here**; use the stock endpoint. 404 if missing, 409 on duplicate SKU. |
 | DELETE | `/api/products/{id}` | 204 | 409 `PRODUCT_HAS_HISTORY` when the product has movements or order lines. History is never deleted. |
 | POST | `/api/products/{id}/stock` | 200 `{data:{product,movement}}` | Body `{type:"in"\|"out", qty, note}`. 409 `INSUFFICIENT_STOCK` + `available`. Movement and stock change share one transaction. |
 | GET | `/api/products/{id}/movements` | 200 `{data}` | Newest first. |
-| GET | `/api/products/summary` | 200 `{data}` | **extension** — totals for the dashboard cards. |
+| GET | `/api/products/summary` | 200 `{data}` | **extension**: totals for the dashboard cards. |
 | POST | `/api/orders` | 201 `{data}` | Validates everything first; prices from the DB; one transaction for all lines. Supports `Idempotency-Key`. |
 | GET | `/api/orders/{id}` | 200 `{data}` | Order + items (with `unit_price`, `subtotal`, `product_name`). |
 | POST | `/api/orders/{id}/cancel` | 200 `{data}` | Restores stock, appends `in` movements. 409 `ORDER_ALREADY_CANCELLED`. |
-| GET | `/api/orders?page=&limit=` | 200 | **extension** — needed by the orders screen. |
-| GET | `/api/reports/daily-sales?date=YYYY-MM-DD` | 200 `{data}` | **bonus** — orders, items sold and revenue for a day (non-cancelled orders). |
+| GET | `/api/orders?page=&limit=` | 200 | **extension**: needed by the orders screen. |
+| GET | `/api/reports/daily-sales?date=YYYY-MM-DD` | 200 `{data}` | **bonus**: orders, items sold and revenue for a day (non-cancelled orders). |
 
 All money/quantity fields are integers (IDR, no floating point).
 
@@ -210,7 +223,7 @@ WHERE id = $2 AND stock >= $1
 RETURNING stock;
 ```
 
-`RowsAffected() == 0` means "don't have enough" — the API then re-reads `stock`
+`RowsAffected() == 0` means "don't have enough", so the API then re-reads `stock`
 for the 409 payload and returns an error, which rolls the transaction back.
 
 For an order, all lines are reserved in **one transaction**, so either the whole
@@ -251,12 +264,12 @@ influence the total.
 
 1. **Shape** (400): customer/name/sku presence, `qty > 0`, duplicate SKUs,
    empty items, integer price ≥ 0. Runs before any query that writes.
-2. **Reference** (400): unknown SKU, inactive product — checked inside the
+2. **Reference** (400): unknown SKU, inactive product, checked inside the
    transaction but before any stock change.
 3. **Availability** (409): `INSUFFICIENT_STOCK` with `sku` + `available`.
 
 The frontend repeats the cheap checks for instant feedback, but it never treats
-them as authoritative — every server error is rendered. In particular the 409
+them as authoritative. Every server error is rendered. In particular the 409
 from the database is shown **in the modal / on the order line**, never only in
 the console.
 
@@ -274,18 +287,24 @@ network retry cannot double-order.
 
 ### 6. Frontend architecture
 
-- `src/api/types.ts` — the domain contract in one module; no `any` on domain data.
-- `src/api/client.ts` — **the only** module that calls `fetch`. It builds URLs,
+- `src/api/types.ts`: the domain contract in one module; no `any` on domain data.
+- `src/api/client.ts`: **the only** module that calls `fetch`. It builds URLs,
   parses the error envelope into a typed `ApiError` (with `code`, `sku`,
   `available`, `fields`, `details`) and exposes one function per endpoint.
   Components never construct URLs.
-- `src/lib/*` — pure formatting and validation, unit tested.
-- `src/hooks/useApi.ts` — loading/error/retry with stale-while-revalidate, so
+- `src/lib/*`: pure formatting and validation, unit tested.
+- `src/hooks/useApi.ts`: loading/error/retry with stale-while-revalidate, so
   typing in the search box does not blank the table.
+- `src/index.css`: design tokens first (colour, type, radius, spacing), then
+  components. No component invents a hex value; `DESIGN.md` is the source of
+  truth for the direction.
 - Loading, empty and error states are all implemented and reachable:
   skeletons while fetching, a filtered empty state with "Clear filters", and an
-  error state with **Retry** (which refetches the table *and* the summary cards).
-  Stop the backend to see it.
+  error state with **Try again** (which refetches the table *and* the summary
+  band). Stop the backend to see it.
+- Destructive actions live one level down: **Delete** sits in the product's edit
+  panel rather than in every table row, so the register stays quiet and the
+  delete guard is still reachable.
 
 ### 7. Extensions beyond the required contract
 
@@ -306,7 +325,7 @@ there would create stock changes with no movement row and break the ledger.
 ## Seed data
 
 16 realistic products (including inactive and zero-stock items), 4 weeks of
-movements and 3 sample orders — one of them cancelled, so both statuses and the
+movements and 3 sample orders, one of them cancelled, so both statuses and the
 restore path are visible immediately. Low-stock count is 7, which makes the
 "Low stock" filter non-trivial.
 
@@ -334,27 +353,29 @@ stockflow/
 
 ## What I would improve next
 
-- **Auth & roles** — the API is currently open; a warehouse app needs at least
+- **Auth & roles**: the API is currently open; a warehouse app needs at least
   an operator identity on every movement.
-- **Optimistic concurrency for edits** — `PUT /api/products/{id}` is last-write-wins.
+- **Optimistic concurrency for edits**: `PUT /api/products/{id}` is last-write-wins.
   An `updated_at` + `If-Match` (or a version column) would stop two supervisors
   from silently overwriting each other.
-- **Migrations as a first-class step** — the initdb scripts are perfect for a
+- **Migrations as a first-class step**: the initdb scripts are perfect for a
   demo but not for evolving production data; I would move to `golang-migrate`
   run by a one-shot compose service.
-- **Order cancellation window** — currently any `CREATED` order can be cancelled
+- **Order cancellation window**: currently any `CREATED` order can be cancelled
   forever. Real ERPs usually restrict this (e.g. same day, or require a reason).
-- **Pagination for movements** — the history endpoint returns everything; fine at
+- **Pagination for movements**: the history endpoint returns everything; fine at
   this size, not at 100k rows.
-- **More frontend tests** — add React Testing Library coverage for the two
+- **More frontend tests**: add React Testing Library coverage for the two
   critical interactions (409 in the stock modal, 409 highlighting an order line).
-- **Observability** — request IDs in logs and a `/metrics` endpoint.
+- **Observability**: request IDs in logs and a `/metrics` endpoint.
 
 ## Time spent
 
-Roughly **7 focused hours**, in this order: schema + seed (1h), Go API and the
+Roughly **8.5 focused hours**, in this order: schema + seed (1h), Go API and the
 concurrency-safe order path (2.5h), backend tests (1h), React UI (2h),
-Docker/README/verification (0.5h).
+Docker/README/verification (0.5h), then a design pass after receiving the Ledger
+direction: tokens, typography, responsive register, English data and a full
+click-through (1.5h).
 
 **AI assistance:** this implementation was produced with AI assistance in a
 single session, per the recruiter's confirmation that tooling is allowed. Every
@@ -374,4 +395,6 @@ test(backend): store tests for data safety
 feat(frontend): React + TypeScript UI for products, stock and orders
 chore(frontend): production build served by nginx with /api proxy
 docs: README with run steps, API contract and design decisions
+feat(design): ledger direction, DESIGN.md and English seed data
+refactor(frontend): rebuild the interface on the ledger design system
 ```
