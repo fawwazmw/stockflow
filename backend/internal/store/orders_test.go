@@ -427,3 +427,73 @@ func isInsufficient(err error) bool {
 func itoa(v int64) string { return strconv.FormatInt(v, 10) }
 
 func ptr[T any](v T) *T { return &v }
+
+func TestListOrdersSearchAndStatus(t *testing.T) {
+	st := testStore(t)
+	ctx := context.Background()
+
+	mustCreateProduct(t, st, "ORD-001", 1_000, 100, true)
+
+	live, _, err := st.CreateOrder(ctx, CreateOrderInput{
+		Customer: "Orchard Supply Co.",
+		Items:    []CreateOrderItem{{SKU: "ORD-001", Qty: 1}},
+	}, "")
+	if err != nil {
+		t.Fatalf("create live order: %v", err)
+	}
+
+	dropped, _, err := st.CreateOrder(ctx, CreateOrderInput{
+		Customer: "Tampines Trading",
+		Items:    []CreateOrderItem{{SKU: "ORD-001", Qty: 2}},
+	}, "")
+	if err != nil {
+		t.Fatalf("create cancelled order: %v", err)
+	}
+	if _, err := st.CancelOrder(ctx, dropped.ID); err != nil {
+		t.Fatalf("cancel order: %v", err)
+	}
+
+	all, total, err := st.ListOrders(ctx, ListOrdersParams{Status: "all", Page: 1, Limit: 10})
+	if err != nil {
+		t.Fatalf("list all: %v", err)
+	}
+	if total != 2 || len(all) != 2 {
+		t.Fatalf("all: total=%d len=%d, want 2/2", total, len(all))
+	}
+
+	// Search is a case-insensitive substring match on the customer name.
+	bySearch, total, err := st.ListOrders(ctx, ListOrdersParams{
+		Search: "orchard", Status: "all", Page: 1, Limit: 10,
+	})
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if total != 1 || len(bySearch) != 1 || bySearch[0].ID != live.ID {
+		t.Fatalf("search: total=%d got=%+v want order %d", total, bySearch, live.ID)
+	}
+
+	onlyLive, total, err := st.ListOrders(ctx, ListOrdersParams{Status: "created", Page: 1, Limit: 10})
+	if err != nil {
+		t.Fatalf("status created: %v", err)
+	}
+	if total != 1 || onlyLive[0].ID != live.ID {
+		t.Fatalf("status created: total=%d got=%+v", total, onlyLive)
+	}
+
+	onlyDropped, total, err := st.ListOrders(ctx, ListOrdersParams{Status: "cancelled", Page: 1, Limit: 10})
+	if err != nil {
+		t.Fatalf("status cancelled: %v", err)
+	}
+	if total != 1 || onlyDropped[0].ID != dropped.ID {
+		t.Fatalf("status cancelled: total=%d got=%+v", total, onlyDropped)
+	}
+
+	// The total counts every match, not just the requested page.
+	_, total, err = st.ListOrders(ctx, ListOrdersParams{Status: "all", Page: 2, Limit: 1})
+	if err != nil {
+		t.Fatalf("second page: %v", err)
+	}
+	if total != 2 {
+		t.Fatalf("second page total = %d, want 2", total)
+	}
+}

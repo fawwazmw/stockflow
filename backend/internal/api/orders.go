@@ -157,7 +157,26 @@ func (s *Server) handleListOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orders, total, err := s.store.ListOrders(r.Context(), page, limit)
+	status := r.URL.Query().Get("status")
+	if status == "" {
+		status = "all"
+	}
+	switch status {
+	case "all", "created", "cancelled":
+	default:
+		s.fail(w, r, &store.ValidationError{
+			Message: "status must be one of all, created, cancelled",
+			Fields:  map[string]string{"status": "invalid value"},
+		})
+		return
+	}
+
+	orders, total, err := s.store.ListOrders(r.Context(), store.ListOrdersParams{
+		Search: r.URL.Query().Get("search"),
+		Status: status,
+		Page:   page,
+		Limit:  limit,
+	})
 	if err != nil {
 		s.fail(w, r, err)
 		return

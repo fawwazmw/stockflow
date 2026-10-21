@@ -158,7 +158,7 @@ a specific order line:
 | POST | `/api/orders` | 201 `{data}` | Validates everything first; prices from the DB; one transaction for all lines. Supports `Idempotency-Key`. |
 | GET | `/api/orders/{id}` | 200 `{data}` | Order + items (with `unit_price`, `subtotal`, `product_name`). |
 | POST | `/api/orders/{id}/cancel` | 200 `{data}` | Restores stock, appends `in` movements. 409 `ORDER_ALREADY_CANCELLED`. |
-| GET | `/api/orders?page=&limit=` | 200 | **extension**: needed by the orders screen. |
+| GET | `/api/orders?search=&status=&page=&limit=` | 200 | **extension**: customer search and `status` filter (`all\|created\|cancelled`). |
 | GET | `/api/reports/daily-sales?date=YYYY-MM-DD` | 200 `{data}` | **bonus**: orders, items sold and revenue for a day (non-cancelled orders). |
 
 All money/quantity fields are integers (IDR, no floating point).

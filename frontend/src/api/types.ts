@@ -1,6 +1,7 @@
 export type OrderStatus = 'CREATED' | 'CANCELLED'
 export type StockMovementType = 'in' | 'out'
 export type ProductStatusFilter = 'all' | 'active' | 'inactive' | 'low'
+export type OrderStatusFilter = 'all' | 'created' | 'cancelled'
 
 export interface Product {
   id: number

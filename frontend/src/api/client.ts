@@ -3,6 +3,7 @@ import type {
   CreateOrderInput,
   DailySales,
   Order,
+  OrderStatusFilter,
   Paginated,
   Product,
   ProductInput,
@@ -190,8 +191,20 @@ export function listMovements(id: number): Promise<StockMovement[]> {
   return requestData<StockMovement[]>(`/api/products/${id}/movements`)
 }
 
-export function listOrders(page = 1, limit = 20): Promise<Paginated<Order>> {
-  return request<Paginated<Order>>(`/api/orders?page=${page}&limit=${limit}`)
+export interface OrderListQuery {
+  search?: string
+  status?: OrderStatusFilter
+  page?: number
+  limit?: number
+}
+
+export function listOrders(query: OrderListQuery = {}): Promise<Paginated<Order>> {
+  const params = new URLSearchParams()
+  if (query.search) params.set('search', query.search)
+  params.set('status', query.status ?? 'all')
+  params.set('page', String(query.page ?? 1))
+  params.set('limit', String(query.limit ?? 20))
+  return request<Paginated<Order>>(`/api/orders?${params.toString()}`)
 }
 
 export function createOrder(input: CreateOrderInput, idempotencyKey?: string): Promise<Order> {

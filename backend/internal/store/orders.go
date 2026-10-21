@@ -315,25 +315,47 @@ func (s *Store) GetOrder(ctx context.Context, id int64) (Order, error) {
 	return o, nil
 }
 
-func (s *Store) ListOrders(ctx context.Context, page, limit int) ([]Order, int64, error) {
+type ListOrdersParams struct {
+	Search string
+	Status string // all | created | cancelled
+	Page   int
+	Limit  int
+}
+
+// orderWhere is shared by the list query and its count, and mirrors the
+// products filter: case-insensitive substring match, already-escaped pattern.
+const orderWhere = `
+WHERE (COALESCE($1::text, '') = ''
+       OR so.customer ILIKE '%' || $1::text || '%' ESCAPE '\')
+  AND ($2::text = 'all'
+       OR ($2::text = 'created'   AND so.status = 'CREATED')
+       OR ($2::text = 'cancelled' AND so.status = 'CANCELLED'))`
+
+func (s *Store) ListOrders(ctx context.Context, params ListOrdersParams) ([]Order, int64, error) {
+	if params.Status == "" {
+		params.Status = "all"
+	}
+	pattern := escapeLike(strings.TrimSpace(params.Search))
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT count(*) FROM sales_orders`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx,
+		`SELECT count(*) FROM sales_orders so`+orderWhere, pattern, params.Status).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 
-	offset := (page - 1) * limit
+	offset := (params.Page - 1) * params.Limit
 	rows, err := s.pool.Query(ctx, `
-		SELECT id, customer, status, total, created_at, cancelled_at
-		FROM sales_orders
-		ORDER BY created_at DESC, id DESC
-		LIMIT $1 OFFSET $2`, limit, offset)
+		SELECT so.id, so.customer, so.status, so.total, so.created_at, so.cancelled_at
+		FROM sales_orders so`+orderWhere+`
+		ORDER BY so.created_at DESC, so.id DESC
+		LIMIT $3 OFFSET $4`, pattern, params.Status, params.Limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer rows.Close()
 
-	orders := make([]Order, 0, limit)
-	ids := make([]int64, 0, limit)
+	orders := make([]Order, 0, params.Limit)
+	ids := make([]int64, 0, params.Limit)
 	for rows.Next() {
 		var o Order
 		if err := rows.Scan(&o.ID, &o.Customer, &o.Status, &o.Total, &o.CreatedAt, &o.CancelledAt); err != nil {
