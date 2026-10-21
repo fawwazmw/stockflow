@@ -109,9 +109,15 @@ Covered:
 | `TestIdempotencyKeyReplaysTheSameOrder` | retry returns the same order; a different payload with the same key conflicts |
 | `TestListProductsSearchFilterAndLastMovement` | case-insensitive search, filters, pagination, literal `%`, null `last_movement_at` |
 
-Frontend (Vitest, pure logic, no DOM needed): currency/relative-time
-formatting, quantity and form validation, and the order-line validator
-(duplicate SKUs, zero/negative/fractional quantities).
+Frontend (Vitest, 37 tests across 5 files):
+
+- **Pure logic, node environment**: currency and relative-time formatting,
+  quantity/form validation, order-line validation (duplicate SKUs,
+  zero/negative/fractional quantities).
+- **Component tests, jsdom**: the 409 from the stock endpoint renders the
+  available quantity and keeps the dialog usable; the order builder points at
+  the exact SKU that failed; the error boundary shows a readable fallback and
+  recovers when the render error is gone.
 
 ---
 
@@ -298,6 +304,10 @@ network retry cannot double-order.
 - `src/index.css`: design tokens first (colour, type, radius, spacing), then
   components. No component invents a hex value; `DESIGN.md` is the source of
   truth for the direction.
+- Dialogs own their keyboard behaviour: Tab cycles inside the dialog, Escape
+  closes it, and focus returns to the control that opened it.
+- An error boundary wraps the routes, keyed by pathname, so a render crash
+  degrades to a readable message with a Try again action instead of a blank page.
 - Loading, empty and error states are all implemented and reachable:
   skeletons while fetching, a filtered empty state with "Clear filters", and an
   error state with **Try again** (which refetches the table *and* the summary
@@ -365,23 +375,22 @@ stockflow/
   forever. Real ERPs usually restrict this (e.g. same day, or require a reason).
 - **Pagination for movements**: the history endpoint returns everything; fine at
   this size, not at 100k rows.
-- **More frontend tests**: add React Testing Library coverage for the two
-  critical interactions (409 in the stock modal, 409 highlighting an order line).
 - **Observability**: request IDs in logs and a `/metrics` endpoint.
 
 ## Time spent
 
-Roughly **8.5 focused hours**, in this order: schema + seed (1h), Go API and the
-concurrency-safe order path (2.5h), backend tests (1h), React UI (2h),
-Docker/README/verification (0.5h), then a design pass after receiving the Ledger
-direction: tokens, typography, responsive register, English data and a full
-click-through (1.5h).
+Roughly **9 focused hours**: schema + seed (1h), Go API and the concurrency-safe
+order path (2.5h), backend tests (1h), React UI (2h), Docker/README/verification
+(0.5h), a design pass after receiving the Ledger direction: tokens, typography,
+responsive register, English data and a full click-through (1.5h), then a
+hardening pass: dialog focus management, route error boundary, order filters and
+component tests (0.5h).
 
 ---
 
 ## Git history
 
-Meaningful commits per layer, not one dump:
+Meaningful commits per layer, not one dump. Oldest first:
 
 ```
 chore: scaffold repo layout, compose stack and database schema
@@ -395,4 +404,9 @@ feat(db): translate seed data to English
 docs(design): add DESIGN.md for the ledger direction
 refactor(frontend): rebuild the interface on the ledger design system
 docs: document the interface direction and design decisions
+docs: Update docs for README and DESIGN
+feat(frontend): keep focus inside dialogs and return it on close
+feat(orders): search by customer and filter by status
+test(frontend): cover the two 409 paths with component tests
+feat(frontend): catch render errors per route
 ```
