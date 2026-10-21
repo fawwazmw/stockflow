@@ -109,7 +109,7 @@ func (s *Store) GetProductBySKU(ctx context.Context, sku string) (Product, error
 }
 
 // CreateProduct writes the product and, when it starts with stock, the matching
-// opening movement — in one transaction, so the ledger always explains the stock.
+// opening movement, in one transaction, so the ledger always explains the stock.
 func (s *Store) CreateProduct(ctx context.Context, in ProductInput) (Product, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {

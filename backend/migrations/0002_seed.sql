@@ -11,14 +11,14 @@ INSERT INTO products (sku, name, price, stock, is_active) VALUES
     ('SSD-001', 'SSD Samsung 970 EVO 1TB',            1599000,  18, TRUE),
     ('RAM-001', 'RAM Kingston Fury 16GB DDR4',         899000,   9, TRUE),
     ('PRN-001', 'Printer Epson L3250',                3299000,   4, TRUE),
-    ('PPR-001', 'Kertas HVS A4 80gsm (rim)',            62000, 120, TRUE),
-    ('TNT-001', 'Tinta Epson 003 Black',                89000,   7, TRUE),
-    ('CHR-001', 'Kursi Ergonomis Ergotec',            2450000,   3, TRUE),
-    ('DSK-001', 'Meja Kerja 120cm',                   1799000,   0, TRUE),
-    ('CBL-001', 'Kabel HDMI 2m',                        75000, 200, TRUE),
+    ('PPR-001', 'A4 Copy Paper 80gsm (ream)',           62000, 120, TRUE),
+    ('TNT-001', 'Epson 003 Black Ink',                  89000,   7, TRUE),
+    ('CHR-001', 'Ergotec Ergonomic Chair',            2450000,   3, TRUE),
+    ('DSK-001', 'Work Desk 120cm',                    1799000,   0, TRUE),
+    ('CBL-001', 'HDMI Cable 2m',                        75000, 200, TRUE),
     ('WEB-001', 'Webcam Logitech C270',                549000,   0, FALSE),
     ('SPK-001', 'Speaker JBL Go 3',                    699000,  15, FALSE),
-    ('UPS-001', 'UPS APC BX600',                      1050000,   6, TRUE);
+    ('UPS-001', 'APC BX600 UPS',                      1050000,   6, TRUE);
 
 -- Opening balance for every product that currently holds stock.
 INSERT INTO stock_movements (product_id, type, qty, note, created_at)
@@ -98,12 +98,12 @@ BEGIN
 END $$;
 
 INSERT INTO seed_items VALUES ('MON-001', 2), ('KEY-001', 3);
-SELECT pg_temp.seed_order('CV Sinar Abadi', now() - interval '2 days', FALSE);
+SELECT pg_temp.seed_order('Orchard Supply Co.', now() - interval '2 days', FALSE);
 
 INSERT INTO seed_items VALUES ('CHR-001', 1), ('TNT-001', 2);
-SELECT pg_temp.seed_order('Toko Berkah Jaya', now() - interval '5 days', TRUE);
+SELECT pg_temp.seed_order('Tampines Trading', now() - interval '5 days', TRUE);
 
 INSERT INTO seed_items VALUES ('MSE-001', 4), ('PPR-001', 10);
-SELECT pg_temp.seed_order('PT Maju Bersama', now() - interval '6 hours', FALSE);
+SELECT pg_temp.seed_order('Jurong Hardware', now() - interval '6 hours', FALSE);
 
 DROP TABLE seed_items;
