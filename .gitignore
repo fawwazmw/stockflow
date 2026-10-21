@@ -1,0 +1,16 @@
+# dependencies / build output
+node_modules/
+dist/
+coverage/
+
+# local env
+.env
+.env.local
+
+# go
+backend/api
+backend/stockflow
+
+# misc
+.DS_Store
+*.log
