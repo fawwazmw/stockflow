@@ -395,6 +395,8 @@ test(backend): store tests for data safety
 feat(frontend): React + TypeScript UI for products, stock and orders
 chore(frontend): production build served by nginx with /api proxy
 docs: README with run steps, API contract and design decisions
-feat(design): ledger direction, DESIGN.md and English seed data
+feat(db): translate seed data to English
+docs(design): add DESIGN.md for the ledger direction
 refactor(frontend): rebuild the interface on the ledger design system
+docs: document the interface direction and design decisions
 ```
